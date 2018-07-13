@@ -146,8 +146,8 @@
         <!-- notgroupb dependencies -->
         <dependency>
             <groupId>org.notgroupb</groupId>
-            <artifactId>dataFormatter</artifactId>
-            <version>1.0.0</version>
+            <artifactId>dataFormats</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

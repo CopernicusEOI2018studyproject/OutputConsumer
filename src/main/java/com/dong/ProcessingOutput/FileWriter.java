@@ -15,7 +15,7 @@ public class FileWriter {
 	}
 	public void write(List<ConsumerRecord> pointList, String path)
 	{
-		
+		// need to place the old files.
 		try {
 			PrintWriter writer = new PrintWriter(path, "UTF-8");
 			writer.println("[");
