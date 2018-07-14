@@ -17,19 +17,21 @@ public class FileWriter {
 	{
 		// need to place the old files.
 		try {
-			PrintWriter writer = new PrintWriter(path, "UTF-8");
-			writer.println("[");
-			pointList.forEach(record ->{
-				writer.println(record.value().toString());
-				writer.println(",");
-			});
-			for(int i=0;i<pointList.size()-1;i++)
+			if(pointList.size() != 0)
 			{
-				writer.println(pointList.get(i).value().toString());
-				writer.println(",");
+				PrintWriter writer = new PrintWriter(path, "UTF-8");
+				writer.println("[");
+				
+				for(int i=0;i<pointList.size()-1;i++)
+				{
+					writer.println(pointList.get(i).value().toString());
+					writer.println(",");
+				}
+				writer.println(pointList.get(pointList.size()-1).value().toString());
+				writer.println("]");
+				writer.close();
 			}
-			writer.println(pointList.get(pointList.size()-1).value().toString());
-			writer.println("]");
+			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

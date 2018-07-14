@@ -21,7 +21,7 @@ public class OutputConsumer {
 	private  static String TOPIC = ""; // topic which is subscribed
     private  static String BOOTSTRAP_SERVERS = "";
     private static List<ConsumerRecord> outputRecord = new ArrayList<ConsumerRecord>();
-    private static List<ConsumerRecord> outputAllRecord = new ArrayList<ConsumerRecord>();
+    private static List<ConsumerRecord> output8Record = new ArrayList<ConsumerRecord>();
     private static LocalDateTime  targetTime;
     private static Boolean isContain = false;
     private static String outputPath;
@@ -38,11 +38,12 @@ public class OutputConsumer {
     public Consumer<String, OutputDataPoint> createConsumer() {
         final Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,BOOTSTRAP_SERVERS);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG,"KafkaExampleConsumer");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG,"KafkaExampleConsumer3");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
                 OutputDataPointDeserializer.class.getName());
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create the consumer using props.
         final Consumer<String, OutputDataPoint> consumer = new KafkaConsumer<>(props);
         // Subscribe to the topic.
@@ -51,49 +52,54 @@ public class OutputConsumer {
     }
     public void runConsumer() throws InterruptedException {
         final Consumer<String, OutputDataPoint> consumer = createConsumer();
-        final int giveUp = 5;   
+        final int giveUp = 1000;   
         int noRecordsCount = 0;
         
         while (true) {
         	// find out what happened in this fucntion  consumer.poll
-            final ConsumerRecords<String, OutputDataPoint> consumerRecords =
-                    consumer.poll(10); //in seconds and 5mins,If no records are available after the time period specified, the poll method returns an empty ConsumerRecords.
-            System.out.println("can you come here? ");
+             ConsumerRecords<String, OutputDataPoint> consumerRecords =
+                    consumer.poll(100); //in milliseconds and 2mins it should be 120000 ,If no records are available after the time period specified, the poll method returns an empty ConsumerRecords.
             if (consumerRecords.count()==0) {
                 noRecordsCount++;
                 System.out.println("no records for " + noRecordsCount +"times");
                 if (noRecordsCount > giveUp) break;
                 else continue;
             }
+            System.out.println("how many records? " + consumerRecords.count() +"times");
+            
             consumerRecords.forEach(record -> {
-            	System.out.println("how many records? " + consumerRecords.count() +"times");
+            	System.out.println("what is  record? " + record.value().toString());
             	//for each record what's the processing?  first one find out the biggest one. 
             	//step one: filter data inside this time span 
             	//when the new records get inside, compare to the name of list, and the value, and replace if the new value is larger than old one.
             	//when it comes to hour/ report  the list and clean the list.
             	double offset =  Duration.between(targetTime, (Temporal) record.value().getRecordTime()).getSeconds();
-            	// if we need to change to 8 hours we need to change here 
-            	if (offset < 3600 && offset > 0 )
+            	// code for last one hour
+            	if (offset <= 3600 && offset >= 0 )
             	{
             		isContain = false;
-            		outputRecord.forEach( element ->{
-            			if(element.key() == record.key())
+            		for(int p=0;p<outputRecord.size();p++)
+            		{
+            			ConsumerRecord element = outputRecord.get(p);
+            			if(element.key().toString().equals(record.key().toString()))
             			{
             				isContain = true;
-            				if(((OutputDataPoint)element.value()).getScore() > record.value().getScore())
+            				if(((OutputDataPoint)element.value()).getScore() < record.value().getScore())
             				{
             					outputRecord.remove(element);
             					outputRecord.add(record);
+            					break;
             				}
             			}
-            		});
+            		}
             		if (isContain == false)
     				{
     					outputRecord.add(record);
     				}
             	}
+            	//////////////////////////////////////////////////////////////////////////////////////////
             	// the code for last 8 hours
-//            	if(offset < 28800 && offset > 0 && currentStatus == true)
+//            	if(offset <= 28800 && offset >= 0 && currentStatus == true)
 //            	{
 //            		isContain = false;
 //            		// 
@@ -108,7 +114,7 @@ public class OutputConsumer {
 ////            				element.value().getScore()
 //            				if(((OutputDataPoint)element.value()).getScore() > record.value().getScore())
 //            				{
-//            					outputAllRecord.remove(element);
+//            					output8Record.remove(element);
 //            					outputAllRecord.add(record);
 //            				}
 //            			}
@@ -136,10 +142,11 @@ public class OutputConsumer {
 //                System.out.printf("Consumer Record:(%d, %s, %d, %d)\n",
 //                        record.key(), record.value(),
 //                        record.partition(), record.offset());
+   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             });
          // if the time is hour output the outputRecord// write in json file.
         	LocalDateTime currentTime = LocalDateTime.now();
-        	if (currentTime.getMinute()>55)
+        	if (currentTime.getMinute()>0)//55
         	{
         		//output this list and clean it
         		FileWriter writer = new FileWriter();
