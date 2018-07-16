@@ -21,8 +21,9 @@ public class OutputConsumer {
 	private  static String TOPIC = ""; // topic which is subscribed
     private  static String BOOTSTRAP_SERVERS = "";
     private static List<ConsumerRecord> outputRecord = new ArrayList<ConsumerRecord>();
-    private static List<ConsumerRecord> output8RecordNum = new ArrayList<ConsumerRecord>(); //store the numerator
-    private static List<ConsumerRecord> output8RecordDe = new ArrayList<ConsumerRecord>(); //store the denominator
+    private static List<OutputDataPoint> output8RecordNum = new ArrayList<OutputDataPoint>(); //store the numerator
+    private static List<OutputDataPoint> output8RecordDe = new ArrayList<OutputDataPoint>(); //store the denominator
+    private static List<OutputDataPoint> outputCurrentRecord = new ArrayList<OutputDataPoint>(); //store current score 
     private static LocalDateTime  targetTime;
     private static Boolean isContain = false;
     private static String outputPath;
@@ -36,12 +37,12 @@ public class OutputConsumer {
     	targetTime = targettime;
     	outputPath = outputpath +targettime.toLocalDate().toString() +"T" +targettime.getHour()+".json";
     	currentStatus = current;
-    	outputPathCurrent = outputpath + "current" + targettime.toString() +".json";
+    	outputPathCurrent = outputpath + "current" + targettime.toLocalDate().toString() +"T" +targettime.getHour() +".json";
     }
     public Consumer<String, OutputDataPoint> createConsumer() {
         final Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,BOOTSTRAP_SERVERS);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG,"KafkaExampleConsumer3");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG,"KafkaExampleConsumer" + System.currentTimeMillis());
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG,
                 StringDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG,
@@ -55,7 +56,7 @@ public class OutputConsumer {
     }
     public void runConsumer() throws InterruptedException {
         final Consumer<String, OutputDataPoint> consumer = createConsumer();
-        final int giveUp = 1000;   
+        final int giveUp = 500;   
         int noRecordsCount = 0;
         
         while (true) {
@@ -78,7 +79,7 @@ public class OutputConsumer {
             	//when it comes to hour/ report  the list and clean the list.
             	double offset =  Duration.between(targetTime, (Temporal) record.value().getRecordTime()).getSeconds();
 ///
-            	// code for last one hour
+            	// code for next one hour
             	if (offset <= 3600 && offset > 0 )
             	{
             		isContain = false;
@@ -101,40 +102,50 @@ public class OutputConsumer {
     					outputRecord.add(record);
     				}
             	}
-            	//////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////
             	// the code for last 8 hours
             	if(currentStatus == true)
             	{
-                	if(offset <= 28800 && offset >= 0)
+                	if(offset >= -28800 && offset < 0)
                 	{
                 		isContain = false;
                 		// 
                 		for(int p =0; p<output8RecordNum.size(); p++)
                 		{
-                			ConsumerRecord element =output8RecordNum.get(p);
-                			if(element.key().toString().equals( record.key().toString()))
+                			if(output8RecordNum.get(p).getName().toLowerCase().toString().equals( record.key().toLowerCase().toString()))
                 			{
                 				isContain = true;
                 				//IDW algorithm
                 				// numerator 
-                				double numerator = ((OutputDataPoint)element.value()).getScore() + record.value().getScore()/(Math.pow(offset,2));
-                				((OutputDataPoint) output8RecordNum.get(p).value()).setScore(numerator);
-                				double denominator = ((OutputDataPoint) output8RecordDe.get(p).value()).getScore() + 1/(Math.pow(offset,2));
-                				((OutputDataPoint) output8RecordDe.get(p).value()).setScore(denominator);
+                				double numerator = output8RecordNum.get(p).getScore() + record.value().getScore()*10000/(offset*offset);
+                				output8RecordNum.get(p).setScore(numerator);
+
+                				double denominator = output8RecordDe.get(p).getScore() + 10000/(offset*offset);
+                				output8RecordDe.get(p).setScore(denominator);
+                				break;
                 			}
                 		}
                 		if (isContain == false)
         				{
-                			double numerator = record.value().getScore()/(Math.pow(offset,2));
-                			double denominator = 1/(Math.pow(offset,2));
-                			record.value().setScore(numerator);
-                			output8RecordNum.add(record);
-                			record.value().setScore(denominator);
-                			output8RecordDe.add(record);
+                			double numerator = record.value().getScore()*10000/(offset*offset);
+                			double denominator = 10000/(offset*offset);
+                			OutputDataPoint tempDataPoint = new OutputDataPoint();
+                			tempDataPoint.setName(record.value().getName());
+                			tempDataPoint.setRecordTime(record.value().getRecordTime());
+                			tempDataPoint.setLat(record.value().getLat());
+                			tempDataPoint.setLon(record.value().getLon());
+                			tempDataPoint.setScore(numerator);
+                			output8RecordNum.add(tempDataPoint);
+
+                			OutputDataPoint tempDataPoint2 = new OutputDataPoint();
+                			tempDataPoint2.setName(record.value().getName());
+                			tempDataPoint2.setRecordTime(record.value().getRecordTime());
+                			tempDataPoint2.setLat(record.value().getLat());
+                			tempDataPoint2.setLon(record.value().getLon());
+                			tempDataPoint2.setScore(denominator);
+                			output8RecordDe.add(tempDataPoint2);
         				}
                 		
-                	//}
-                	// if the current time
 //                    System.out.printf("Consumer Record:(%d, %s, %d, %d)\n",
 //                            record.key(), record.value(),
 //                            record.partition(), record.offset());
@@ -145,25 +156,27 @@ public class OutputConsumer {
             });
          // if the time is hour output the outputRecord// write in json file.
         	LocalDateTime currentTime = LocalDateTime.now();
-        	if (currentTime.getMinute()>0)//55
+        	if (currentTime.getMinute()>0)//55 at what time output a map
         	{
-        		if(currentStatus == false)
-        		{
-        			//for last one hour 
-            		FileWriter writer = new FileWriter();
-            		writer.write(outputRecord, outputPath);
-        		}else
+        		//for last one hour 
+        		FileWriter writer = new FileWriter();
+        		writer.write(outputRecord, outputPath);
+        		if(currentStatus == true)
         		{
         			//for 8 hours output this list and clean it  
             		for(int p =0; p<output8RecordNum.size(); p++)
             		{
-            			double temp = ((OutputDataPoint) output8RecordNum.get(p).value()).getScore() / ((OutputDataPoint) output8RecordDe.get(p).value()).getScore();
-            			((OutputDataPoint) output8RecordNum.get(p).value()).setScore(temp);
+            			double temp = output8RecordNum.get(p).getScore() / output8RecordDe.get(p).getScore();
+            			OutputDataPoint tempDataPoint = new OutputDataPoint();
+            			tempDataPoint = (OutputDataPoint) output8RecordNum.get(p);
+            			tempDataPoint.setScore(temp);
+            			outputCurrentRecord.add(tempDataPoint);
             		}
-            		FileWriter writer = new FileWriter();
-            		writer.write(output8RecordNum, outputPathCurrent);
+            		FileWriter writer1 = new FileWriter();
+            		writer1.writePoint(outputCurrentRecord, outputPathCurrent);
             		output8RecordNum.clear();
             		output8RecordDe.clear();
+            		outputCurrentRecord.clear();
             		currentStatus = false;
         		}
         		

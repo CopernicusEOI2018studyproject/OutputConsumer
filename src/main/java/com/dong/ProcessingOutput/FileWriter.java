@@ -6,6 +6,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.notgroupb.formats.OutputDataPoint;
+
 
 public class FileWriter {
 	//output the list
@@ -40,5 +42,32 @@ public class FileWriter {
 			e.printStackTrace();
 		}
 		
+	}
+	public void writePoint(List<OutputDataPoint> pointList, String path)
+	{
+		// need to place the old files.
+				try {
+					if(pointList.size() != 0)
+					{
+						PrintWriter writer = new PrintWriter(path, "UTF-8");
+						writer.println("[");
+						
+						for(int i=0;i<pointList.size()-1;i++)
+						{
+							writer.println(pointList.get(i).toString());
+							writer.println(",");
+						}
+						writer.println(pointList.get(pointList.size()-1).toString());
+						writer.println("]");
+						writer.close();
+					}
+					
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 	}
 }
