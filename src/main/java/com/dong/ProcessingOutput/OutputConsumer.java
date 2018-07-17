@@ -27,17 +27,13 @@ public class OutputConsumer {
     private static LocalDateTime  targetTime;
     private static Boolean isContain = false;
     private static String outputPath;
-    private static String outputPathCurrent;
-    private static Boolean currentStatus;
    
-	public OutputConsumer(String subscribeTopic, String ipPort, LocalDateTime targettime, String outputpath, Boolean current)
+	public OutputConsumer(String subscribeTopic, String ipPort, LocalDateTime targettime, String outputpath)
     {
     	TOPIC = subscribeTopic;
     	BOOTSTRAP_SERVERS = ipPort;
     	targetTime = targettime;
     	outputPath = outputpath +targettime.toLocalDate().toString() +"T" +targettime.getHour()+".json";
-    	currentStatus = current;
-    	outputPathCurrent = outputpath + "current" + targettime.toLocalDate().toString() +"T" +targettime.getHour() +".json";
     }
     public Consumer<String, OutputDataPoint> createConsumer() {
         final Properties props = new Properties();
@@ -104,8 +100,7 @@ public class OutputConsumer {
             	}
 ///////////////////////////////////////////////////////////////////////////////////////////////
             	// the code for last 8 hours
-            	if(currentStatus == true)
-            	{
+            	
                 	if(offset >= -28800 && offset < 0)
                 	{
                 		isContain = false;
@@ -150,36 +145,28 @@ public class OutputConsumer {
 //                            record.key(), record.value(),
 //                            record.partition(), record.offset());
             	}
-            	}
+            	
 
    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             });
          // if the time is hour output the outputRecord// write in json file.
         	LocalDateTime currentTime = LocalDateTime.now();
-        	if (currentTime.getMinute()>0)//55 at what time output a map
+        	if (currentTime.getMinute()>57)//57 at what time output a map
         	{
+        		//for 8 hours output this list and clean it  
+        		for(int p =0; p<output8RecordNum.size(); p++)
+        		{
+        			double temp = output8RecordNum.get(p).getScore() / output8RecordDe.get(p).getScore();
+        			OutputDataPoint tempDataPoint = new OutputDataPoint();
+        			tempDataPoint = (OutputDataPoint) output8RecordNum.get(p);
+        			tempDataPoint.setScore(temp);
+        			outputCurrentRecord.add(tempDataPoint);
+        			
+        		}
         		//for last one hour 
         		FileWriter writer = new FileWriter();
-        		writer.write(outputRecord, outputPath);
-        		if(currentStatus == true)
-        		{
-        			//for 8 hours output this list and clean it  
-            		for(int p =0; p<output8RecordNum.size(); p++)
-            		{
-            			double temp = output8RecordNum.get(p).getScore() / output8RecordDe.get(p).getScore();
-            			OutputDataPoint tempDataPoint = new OutputDataPoint();
-            			tempDataPoint = (OutputDataPoint) output8RecordNum.get(p);
-            			tempDataPoint.setScore(temp);
-            			outputCurrentRecord.add(tempDataPoint);
-            		}
-            		FileWriter writer1 = new FileWriter();
-            		writer1.writePoint(outputCurrentRecord, outputPathCurrent);
-            		output8RecordNum.clear();
-            		output8RecordDe.clear();
-            		outputCurrentRecord.clear();
-            		currentStatus = false;
-        		}
-        		
+        		writer.write(outputRecord,outputCurrentRecord,outputPath);
+        		outputCurrentRecord.clear();
         	}
             consumer.commitAsync();
         }

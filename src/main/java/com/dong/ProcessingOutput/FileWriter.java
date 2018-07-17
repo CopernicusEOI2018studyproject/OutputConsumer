@@ -15,14 +15,14 @@ public class FileWriter {
 	{
 		
 	}
-	public void write(List<ConsumerRecord> pointList, String path)
+	public void write(List<ConsumerRecord> pointList,List<OutputDataPoint> hour8pointList, String path)
 	{
 		// need to place the old files.
 		try {
 			if(pointList.size() != 0)
 			{
 				PrintWriter writer = new PrintWriter(path, "UTF-8");
-				writer.println("[");
+				writer.println(" {\"Biggest_score_map\" : [");
 				
 				for(int i=0;i<pointList.size()-1;i++)
 				{
@@ -30,8 +30,19 @@ public class FileWriter {
 					writer.println(",");
 				}
 				writer.println(pointList.get(pointList.size()-1).value().toString());
+				writer.println("],");
+				//for 8hours
+				writer.println(" \"8hour_score_map\" : [");
+				for(int i=0;i<hour8pointList.size()-1;i++)
+				{
+					writer.println(hour8pointList.get(i).toString());
+					writer.println(",");
+				}
+				writer.println(hour8pointList.get(hour8pointList.size()-1).toString());
 				writer.println("]");
+				writer.println("}");
 				writer.close();
+				
 			}
 			
 		} catch (FileNotFoundException e) {
@@ -43,21 +54,21 @@ public class FileWriter {
 		}
 		
 	}
-	public void writePoint(List<OutputDataPoint> pointList, String path)
+	public void writePoint(List<OutputDataPoint> hour8pointList, String path)
 	{
 		// need to place the old files.
 				try {
-					if(pointList.size() != 0)
+					if(hour8pointList.size() != 0)
 					{
 						PrintWriter writer = new PrintWriter(path, "UTF-8");
 						writer.println("[");
 						
-						for(int i=0;i<pointList.size()-1;i++)
+						for(int i=0;i<hour8pointList.size()-1;i++)
 						{
-							writer.println(pointList.get(i).toString());
+							writer.println(hour8pointList.get(i).toString());
 							writer.println(",");
 						}
-						writer.println(pointList.get(pointList.size()-1).toString());
+						writer.println(hour8pointList.get(hour8pointList.size()-1).toString());
 						writer.println("]");
 						writer.close();
 					}
