@@ -19,10 +19,10 @@ public class FileWriter {
 	{
 		// need to place the old files.
 		try {
-			if(pointList.size() != 0)
+			if(pointList.size() != 0 && hour8pointList.size() != 0)
 			{
 				PrintWriter writer = new PrintWriter(path, "UTF-8");
-				writer.println(" {\"Biggest_score_map\" : [");
+				writer.println("[");
 				
 				for(int i=0;i<pointList.size()-1;i++)
 				{
@@ -32,7 +32,7 @@ public class FileWriter {
 				writer.println(pointList.get(pointList.size()-1).value().toString());
 				writer.println("],");
 				//for 8hours
-				writer.println(" \"8hour_score_map\" : [");
+				writer.println("[");
 				for(int i=0;i<hour8pointList.size()-1;i++)
 				{
 					writer.println(hour8pointList.get(i).toString());
@@ -40,7 +40,6 @@ public class FileWriter {
 				}
 				writer.println(hour8pointList.get(hour8pointList.size()-1).toString());
 				writer.println("]");
-				writer.println("}");
 				writer.close();
 				
 			}

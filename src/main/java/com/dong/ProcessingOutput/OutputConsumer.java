@@ -151,7 +151,7 @@ public class OutputConsumer {
             });
          // if the time is hour output the outputRecord// write in json file.
         	LocalDateTime currentTime = LocalDateTime.now();
-        	if (currentTime.getMinute()>57)//57 at what time output a map
+        	if (currentTime.getMinute()>0)//57 at what time output a map
         	{
         		//for 8 hours output this list and clean it  
         		for(int p =0; p<output8RecordNum.size(); p++)
@@ -161,7 +161,6 @@ public class OutputConsumer {
         			tempDataPoint = (OutputDataPoint) output8RecordNum.get(p);
         			tempDataPoint.setScore(temp);
         			outputCurrentRecord.add(tempDataPoint);
-        			
         		}
         		//for last one hour 
         		FileWriter writer = new FileWriter();
