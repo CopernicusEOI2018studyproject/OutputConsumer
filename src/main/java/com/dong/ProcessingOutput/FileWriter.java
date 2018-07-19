@@ -22,7 +22,7 @@ public class FileWriter {
 			if(pointList.size() != 0 && hour8pointList.size() != 0)
 			{
 				PrintWriter writer = new PrintWriter(path, "UTF-8");
-				writer.println("[");
+				writer.println("{ \"Biggest\" : [");
 				
 				for(int i=0;i<pointList.size()-1;i++)
 				{
@@ -32,7 +32,7 @@ public class FileWriter {
 				writer.println(pointList.get(pointList.size()-1).value().toString());
 				writer.println("],");
 				//for 8hours
-				writer.println("[");
+				writer.println(" \"8hours\" : [");
 				for(int i=0;i<hour8pointList.size()-1;i++)
 				{
 					writer.println(hour8pointList.get(i).toString());
@@ -40,6 +40,7 @@ public class FileWriter {
 				}
 				writer.println(hour8pointList.get(hour8pointList.size()-1).toString());
 				writer.println("]");
+				writer.println("}");
 				writer.close();
 				
 			}
