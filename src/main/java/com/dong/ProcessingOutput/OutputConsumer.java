@@ -111,8 +111,7 @@ public class OutputConsumer {
                 			{
                 				isContain = true;
                 				//IDW algorithm
-                				// numerator 
-                				double numerator = output8RecordNum.get(p).getScore() + record.value().getScore()*10000/(offset*offset);
+                				double numerator = output8RecordNum.get(p).getScore() + (record.value().getScore()*10000)/(offset*offset);
                 				output8RecordNum.get(p).setScore(numerator);
 
                 				double denominator = output8RecordDe.get(p).getScore() + 10000/(offset*offset);
@@ -122,7 +121,7 @@ public class OutputConsumer {
                 		}
                 		if (isContain == false)
         				{
-                			double numerator = record.value().getScore()*10000/(offset*offset);
+                			double numerator = (record.value().getScore()*10000)/(offset*offset);
                 			double denominator = 10000/(offset*offset);
                 			OutputDataPoint tempDataPoint = new OutputDataPoint();
                 			tempDataPoint.setName(record.value().getName());
